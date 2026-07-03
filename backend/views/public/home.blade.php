@@ -37,7 +37,7 @@
           @foreach ($users as $user)
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3">
-                <a href="/{{ $user->email }}" class="text-indigo-600 hover:underline">
+                <a href="/{{ rawurlencode($user->email) }}" class="text-indigo-600 hover:underline">
                   {{ $user->email }}
                 </a>
               </td>

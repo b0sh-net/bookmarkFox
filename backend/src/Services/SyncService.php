@@ -63,7 +63,7 @@ class SyncService
                     [
                         'user_id' => $user->id,
                         'parent_id' => $parentId,
-                        'name' => $node['title'],
+                        'name' => $node['title'] ?? '',
                         'position' => $node['position'] ?? 0,
                     ]
                 );
@@ -92,6 +92,10 @@ class SyncService
                     continue;
                 }
 
+                if ($parentId === null) {
+                    continue;
+                }
+
                 $incomingBookmarkIds[] = $firefoxId;
 
                 $bookmark = Bookmark::updateOrCreate(
@@ -99,7 +103,7 @@ class SyncService
                     [
                         'user_id' => $user->id,
                         'folder_id' => $parentId,
-                        'title' => $node['title'],
+                        'title' => $node['title'] ?? '',
                         'url' => $url,
                         'position' => $node['position'] ?? 0,
                     ]

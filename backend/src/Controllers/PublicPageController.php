@@ -16,83 +16,63 @@ class PublicPageController extends Controller
         return view('public.home', ['users' => $users]);
     }
 
-    public function root(string $email)
+    public function browse(string $email, ?string $path = null)
     {
         $user = User::where('email', $email)->first();
         if (!$user) {
             return response()->view('errors.404', ['message' => 'User not found.'], 404);
         }
 
-        $folders = BookmarkFolder::where('user_id', $user->id)->whereNull('parent_id')
-            ->orderBy('position')->get();
-        $bookmarks = Bookmark::where('user_id', $user->id)->whereNull('folder_id')
-            ->orderBy('position')->paginate(50);
+        $segments = $path ? explode('/', $path) : [];
+        $currentFolder = null;
+        $ancestors = [];
+        $parentId = null;
 
-        return view('public.root', [
+        foreach ($segments as $segment) {
+            $decoded = rawurldecode($segment);
+            $query = BookmarkFolder::where('user_id', $user->id)
+                ->where('name', $decoded);
+
+            if ($parentId === null) {
+                $query->whereNull('parent_id');
+            } else {
+                $query->where('parent_id', $parentId);
+            }
+
+            $folder = $query->first();
+            if (!$folder) {
+                return response()->view('errors.404', ['message' => 'Folder not found.'], 404);
+            }
+
+            $ancestors[] = $folder;
+            $parentId = $folder->id;
+            $currentFolder = $folder;
+        }
+
+        if ($currentFolder) {
+            $folders = BookmarkFolder::where('parent_id', $currentFolder->id)
+                ->orderBy('position')->get();
+            $bookmarks = Bookmark::where('folder_id', $currentFolder->id)
+                ->orderBy('position')->paginate(50);
+        } else {
+            $folders = BookmarkFolder::where('user_id', $user->id)->whereNull('parent_id')
+                ->orderBy('position')->get();
+            $bookmarks = Bookmark::where('user_id', $user->id)->whereNull('folder_id')
+                ->orderBy('position')->paginate(50);
+        }
+
+        $ancestorSegments = [];
+        $running = '';
+        foreach ($ancestors as $a) {
+            $running .= '/' . rawurlencode($a->name);
+            $ancestorSegments[] = ['folder' => $a, 'url' => $running];
+        }
+
+        return view('public.browse', [
             'user' => $user,
+            'folder' => $currentFolder,
+            'ancestors' => $ancestorSegments,
             'folders' => $folders,
-            'bookmarks' => $bookmarks,
-        ]);
-    }
-
-    public function folder(string $email, string $folderName)
-    {
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            return response()->view('errors.404', ['message' => 'User not found.'], 404);
-        }
-
-        $folder = BookmarkFolder::where('user_id', $user->id)
-            ->where('name', $folderName)
-            ->whereNull('parent_id')
-            ->first();
-
-        if (!$folder) {
-            return response()->view('errors.404', ['message' => 'Folder not found.'], 404);
-        }
-
-        return $this->renderFolder($user, $folder);
-    }
-
-    public function subfolder(string $email, string $folderName, string $subfolderName)
-    {
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            return response()->view('errors.404', ['message' => 'User not found.'], 404);
-        }
-
-        $parent = BookmarkFolder::where('user_id', $user->id)
-            ->where('name', $folderName)
-            ->whereNull('parent_id')
-            ->first();
-
-        if (!$parent) {
-            return response()->view('errors.404', ['message' => 'Folder not found.'], 404);
-        }
-
-        $folder = BookmarkFolder::where('user_id', $user->id)
-            ->where('name', $subfolderName)
-            ->where('parent_id', $parent->id)
-            ->first();
-
-        if (!$folder) {
-            return response()->view('errors.404', ['message' => 'Folder not found.'], 404);
-        }
-
-        return $this->renderFolder($user, $folder);
-    }
-
-    private function renderFolder(User $user, BookmarkFolder $folder)
-    {
-        $subfolders = BookmarkFolder::where('parent_id', $folder->id)
-            ->orderBy('position')->get();
-        $bookmarks = Bookmark::where('folder_id', $folder->id)
-            ->orderBy('position')->paginate(50);
-
-        return view('public.folder', [
-            'user' => $user,
-            'folder' => $folder,
-            'subfolders' => $subfolders,
             'bookmarks' => $bookmarks,
         ]);
     }

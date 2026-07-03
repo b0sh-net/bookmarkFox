@@ -22,8 +22,7 @@ Route::prefix('api/v1')->group(function () {
 // Homepage
 Route::get('/', [PublicPageController::class, 'home']);
 
-// Public bookmark browsing pages
-Route::get('/{email}', [PublicPageController::class, 'root'])->where('email', '[^/]+@[^/]+');
-Route::get('/{email}/{folder}', [PublicPageController::class, 'folder'])->where('email', '[^/]+@[^/]+');
-Route::get('/{email}/{folder}/{subfolder}', [PublicPageController::class, 'subfolder'])
-    ->where('email', '[^/]+@[^/]+');
+// Public bookmark browsing pages (unlimited nesting depth)
+Route::get('/{email}/{path?}', [PublicPageController::class, 'browse'])
+    ->where('email', '[^/]+@[^/]+')
+    ->where('path', '.*');

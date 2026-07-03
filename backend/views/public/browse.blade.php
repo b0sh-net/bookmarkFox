@@ -1,27 +1,33 @@
 @extends('layouts.public')
 
-@section('title', $folder->name)
+@section('title', $folder ? $folder->name : $user->email)
 @section('user-label', $user->email)
 
 @section('content')
   <nav class="text-sm text-gray-500 mb-6">
-    <a href="/{{ $user->email }}" class="text-indigo-600 hover:underline">{{ $user->email }}</a>
-    @if ($folder->parent)
+    <a href="/{{ rawurlencode($user->email) }}" class="text-indigo-600 hover:underline">{{ $user->email }}</a>
+    @foreach ($ancestors as $a)
       <span class="mx-1">/</span>
-      <a href="/{{ $user->email }}/{{ urlencode($folder->parent->name) }}"
-         class="text-indigo-600 hover:underline">{{ $folder->parent->name }}</a>
-    @endif
-    <span class="mx-1">/</span>
-    <span class="text-gray-800 font-medium">{{ $folder->name }}</span>
+      @if (!$loop->last)
+        <a href="/{{ rawurlencode($user->email) }}{{ $a['url'] }}" class="text-indigo-600 hover:underline">{{ $a['folder']->name }}</a>
+      @else
+        <span class="text-gray-800 font-medium">{{ $a['folder']->name }}</span>
+      @endif
+    @endforeach
   </nav>
 
-  <h1 class="text-2xl font-bold mb-6">{{ $folder->name }}</h1>
+  @if ($folder)
+    <h1 class="text-2xl font-bold mb-6">{{ $folder->name }}</h1>
+  @else
+    <h1 class="text-2xl font-bold mb-6">{{ $user->email }}'s bookmarks</h1>
+  @endif
 
-  @if ($subfolders->isNotEmpty())
-    <h2 class="text-lg font-semibold text-gray-700 mb-3">Subfolders</h2>
+  @if ($folders->isNotEmpty())
+    <h2 class="text-lg font-semibold text-gray-700 mb-3">{{ $folder ? 'Subfolders' : 'Folders' }}</h2>
     <div class="grid gap-2 mb-8">
-      @foreach ($subfolders as $sub)
-        <a href="/{{ $user->email }}/{{ urlencode($folder->name) }}/{{ urlencode($sub->name) }}"
+      @foreach ($folders as $sub)
+        @php $parentPath = $ancestors ? $ancestors[count($ancestors) - 1]['url'] : ''; @endphp
+        <a href="/{{ rawurlencode($user->email) }}{{ $parentPath }}/{{ rawurlencode($sub->name) }}"
            class="block p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition">
           <span class="font-medium text-indigo-600">&#128193;</span>
           <span class="ml-2">{{ $sub->name }}</span>
@@ -46,7 +52,7 @@
     </div>
   @endif
 
-  @if ($subfolders->isEmpty() && $bookmarks->isEmpty())
-    <p class="text-gray-500">This folder is empty.</p>
+  @if ($folders->isEmpty() && $bookmarks->isEmpty())
+    <p class="text-gray-500">{{ $folder ? 'This folder is empty.' : 'No bookmarks yet.' }}</p>
   @endif
 @endsection

@@ -17,7 +17,7 @@ const folderPicker = document.getElementById('folder-picker');
 const clearRootBtn = document.getElementById('clear-root-btn');
 
 async function apiCall(endpoint, method = 'POST', body = null, token = null) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -27,7 +27,13 @@ async function apiCall(endpoint, method = 'POST', body = null, token = null) {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Request failed');
+  if (!res.ok) {
+    if (res.status === 401) {
+      chrome.storage.local.remove(['token', 'email', 'lastSync', 'syncRootId', 'syncRootTitle']);
+      showAuthView();
+    }
+    throw new Error(data.message || 'Request failed');
+  }
   return data;
 }
 

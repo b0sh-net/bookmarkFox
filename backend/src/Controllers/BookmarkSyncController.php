@@ -13,13 +13,15 @@ class BookmarkSyncController extends AppController
 
     public function sync(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'tree' => 'required|array',
             'tree.*.firefox_id' => 'required|string',
             'tree.*.type' => 'required|in:folder,bookmark',
         ]);
 
-        $result = $this->syncService->sync($request->user(), $validated['tree']);
+        $tree = $request->input('tree');
+
+        $result = $this->syncService->sync($request->user(), $tree);
 
         return $this->json($result);
     }

@@ -57,6 +57,7 @@ async function performSync() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({ tree }),
@@ -76,15 +77,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'bookmarkSync') performSync();
 });
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getBookmarkTree') {
-    const result = await getPrunedTree(message.syncRootId);
-
-    if (result.fallback) {
-      chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
-    }
-
-    sendResponse({ tree: result.tree });
+    getPrunedTree(message.syncRootId).then(result => {
+      if (result.fallback) {
+        chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+      }
+      sendResponse({ tree: result.tree });
+    });
     return true;
   }
 
