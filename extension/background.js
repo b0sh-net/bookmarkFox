@@ -78,13 +78,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === 'getBookmarkTree') {
-    const { tree, fallback } = await getPrunedTree(message.syncRootId);
+    const result = await getPrunedTree(message.syncRootId);
 
-    if (fallback) {
+    if (result.fallback) {
       chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
     }
 
-    sendResponse({ tree });
+    sendResponse({ tree: result.tree });
     return true;
   }
 
