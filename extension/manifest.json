@@ -9,7 +9,7 @@
     "alarms"
   ],
   "host_permissions": [
-    "https://bookmarkfox.it/*",
+    "https://bookmarkfox.b0sh.net/*",
     "http://localhost/*"
   ],
   "background": {
