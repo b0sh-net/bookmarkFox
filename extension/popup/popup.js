@@ -13,6 +13,8 @@ const syncError = document.getElementById('sync-error');
 const syncStatus = document.getElementById('sync-status');
 const userEmail = document.getElementById('user-email');
 const lastSync = document.getElementById('last-sync');
+const folderPicker = document.getElementById('folder-picker');
+const clearRootBtn = document.getElementById('clear-root-btn');
 
 async function apiCall(endpoint, method = 'POST', body = null, token = null) {
   const headers = { 'Content-Type': 'application/json' };
@@ -29,10 +31,55 @@ async function apiCall(endpoint, method = 'POST', body = null, token = null) {
   return data;
 }
 
+async function populateFolderPicker() {
+  const tree = await new Promise((resolve) => {
+    chrome.bookmarks.getTree((t) => resolve(t));
+  });
+
+  const root = tree[0];
+  const topLevelFolders = [];
+
+  function collectTopLevelFolders(nodes) {
+    for (const node of nodes) {
+      if (node.children && node.id !== 'root________') {
+        topLevelFolders.push({ id: node.id, title: node.title });
+      }
+      if (node.children) collectTopLevelFolders(node.children);
+    }
+  }
+
+  collectTopLevelFolders(root.children || []);
+
+  folderPicker.innerHTML = '<option value="">All bookmarks</option>';
+
+  for (const f of topLevelFolders) {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.title;
+    folderPicker.appendChild(opt);
+  }
+
+  const { syncRootId, syncRootTitle } = await new Promise((resolve) => {
+    chrome.storage.local.get(['syncRootId', 'syncRootTitle'], resolve);
+  });
+
+  if (syncRootId) {
+    const exists = topLevelFolders.some((f) => f.id === syncRootId);
+    if (exists) {
+      folderPicker.value = syncRootId;
+      clearRootBtn.classList.remove('hidden');
+    } else {
+      chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+    }
+  }
+}
+
 async function showSyncView(email) {
   authView.classList.add('hidden');
   syncView.classList.remove('hidden');
   userEmail.textContent = email;
+
+  await populateFolderPicker();
 
   chrome.storage.local.get(['lastSync'], (result) => {
     if (result.lastSync) {
@@ -74,13 +121,31 @@ async function handleAuth(action) {
 loginBtn.addEventListener('click', () => handleAuth('login'));
 registerBtn.addEventListener('click', () => handleAuth('register'));
 
+folderPicker.addEventListener('change', () => {
+  const value = folderPicker.value;
+  if (value) {
+    const title = folderPicker.options[folderPicker.selectedIndex].textContent;
+    chrome.storage.local.set({ syncRootId: value, syncRootTitle: title });
+    clearRootBtn.classList.remove('hidden');
+  } else {
+    chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+    clearRootBtn.classList.add('hidden');
+  }
+});
+
+clearRootBtn.addEventListener('click', () => {
+  folderPicker.value = '';
+  chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+  clearRootBtn.classList.add('hidden');
+});
+
 logoutBtn.addEventListener('click', () => {
   chrome.storage.local.get(['token'], async (result) => {
     try {
       await apiCall('/logout', 'POST', null, result.token);
     } catch (_) { /* ignore */ }
 
-    chrome.storage.local.remove(['token', 'email', 'lastSync'], () => {
+    chrome.storage.local.remove(['token', 'email', 'lastSync', 'syncRootId', 'syncRootTitle'], () => {
       showAuthView();
     });
   });
@@ -90,7 +155,7 @@ syncBtn.addEventListener('click', async () => {
   syncError.classList.add('hidden');
   syncStatus.textContent = 'Syncing...';
 
-  chrome.storage.local.get(['token'], async (result) => {
+  chrome.storage.local.get(['token', 'syncRootId'], async (result) => {
     if (!result.token) {
       syncError.textContent = 'Not authenticated.';
       syncError.classList.remove('hidden');
@@ -98,9 +163,10 @@ syncBtn.addEventListener('click', async () => {
     }
 
     try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      const tree = await chrome.runtime.sendMessage({ action: 'getBookmarkTree' });
+      const tree = await chrome.runtime.sendMessage({
+        action: 'getBookmarkTree',
+        syncRootId: result.syncRootId || null,
+      });
 
       const data = await apiCall('/bookmarks/sync', 'POST', tree, result.token);
 

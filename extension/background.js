@@ -16,14 +16,42 @@ function buildTreePayload(nodes) {
   });
 }
 
+function findSubtree(nodes, targetId) {
+  for (const node of nodes) {
+    if (node.id === targetId) return [node];
+    if (node.children) {
+      const found = findSubtree(node.children, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function getPrunedTree(syncRootId) {
+  const tree = await new Promise((resolve) => {
+    chrome.bookmarks.getTree((t) => resolve(t));
+  });
+
+  if (!syncRootId) return { tree: buildTreePayload(tree) };
+
+  const subtree = findSubtree(tree, syncRootId);
+  if (!subtree) {
+    return { tree: buildTreePayload(tree), fallback: true };
+  }
+
+  return { tree: buildTreePayload(subtree) };
+}
+
 async function performSync() {
-  const { token } = await chrome.storage.local.get(['token']);
+  const { token, syncRootId } = await chrome.storage.local.get(['token', 'syncRootId']);
   if (!token) return;
 
   try {
-    const tree = await new Promise((resolve) => {
-      chrome.bookmarks.getTree((t) => resolve(buildTreePayload(t)));
-    });
+    const { tree, fallback } = await getPrunedTree(syncRootId);
+
+    if (fallback) {
+      chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+    }
 
     const res = await fetch(`${API_BASE}/bookmarks/sync`, {
       method: 'POST',
@@ -48,11 +76,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'bookmarkSync') performSync();
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === 'getBookmarkTree') {
-    chrome.bookmarks.getTree((tree) => {
-      sendResponse({ tree: buildTreePayload(tree) });
-    });
+    const { tree, fallback } = await getPrunedTree(message.syncRootId);
+
+    if (fallback) {
+      chrome.storage.local.remove(['syncRootId', 'syncRootTitle']);
+    }
+
+    sendResponse({ tree });
     return true;
   }
 

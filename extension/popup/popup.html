@@ -18,6 +18,13 @@
   <div id="sync-view" class="hidden">
     <h1>bookmarkFox</h1>
     <p id="user-email"></p>
+
+    <label class="picker-label" for="folder-picker">Sync folder:</label>
+    <select id="folder-picker">
+      <option value="">All bookmarks</option>
+    </select>
+    <button id="clear-root-btn" class="small secondary hidden">Clear selection</button>
+
     <button id="sync-btn">Sync Now</button>
     <p id="sync-status"></p>
     <p id="last-sync" class="muted"></p>

@@ -19,7 +19,7 @@ h1 {
   color: #1a1a2e;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 10px 12px;
   margin-bottom: 8px;
@@ -30,8 +30,16 @@ input {
   transition: border-color 0.2s;
 }
 
-input:focus {
+input:focus, select:focus {
   border-color: #4361ee;
+}
+
+.picker-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 4px;
 }
 
 button {
@@ -72,6 +80,12 @@ button {
 
 .secondary:hover {
   background: #dee2e6;
+}
+
+.small {
+  padding: 6px 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
 }
 
 .error {
