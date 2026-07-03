@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = 'https://bookmarkfox.b0sh.net/api/v1';
 
 function buildTreePayload(nodes) {
   return nodes.map((node) => {

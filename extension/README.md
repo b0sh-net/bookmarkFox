@@ -32,8 +32,9 @@ Package the extension for distribution:
 
 ## Configuration
 
-Set the backend URL in `popup/popup.js` by changing the `API_BASE` constant
-(default: `http://localhost:8000/api/v1`).
+Set the backend URL by changing the `API_BASE` constant in both
+`background.js` and `popup/popup.js`
+(current: `https://bookmarkfox.b0sh.net/api/v1`).
 
 ## Permissions
 
