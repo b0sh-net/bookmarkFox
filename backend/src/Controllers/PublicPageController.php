@@ -9,6 +9,13 @@ use Illuminate\Routing\Controller;
 
 class PublicPageController extends Controller
 {
+    public function home()
+    {
+        $users = User::orderBy('created_at', 'desc')->get();
+
+        return view('public.home', ['users' => $users]);
+    }
+
     public function root(string $email)
     {
         $user = User::where('email', $email)->first();

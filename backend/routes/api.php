@@ -19,6 +19,9 @@ Route::prefix('api/v1')->group(function () {
     });
 });
 
+// Homepage
+Route::get('/', [PublicPageController::class, 'home']);
+
 // Public bookmark browsing pages
 Route::get('/{email}', [PublicPageController::class, 'root'])->where('email', '[^/]+@[^/]+');
 Route::get('/{email}/{folder}', [PublicPageController::class, 'folder'])->where('email', '[^/]+@[^/]+');
