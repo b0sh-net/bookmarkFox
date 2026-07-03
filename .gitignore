@@ -1,0 +1,22 @@
+# PHP
+vendor/
+composer.lock
+*.log
+
+# Node / JS
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# Laravel
+backend/storage/
+backend/bootstrap/cache/

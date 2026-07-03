@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="auth-view">
+    <h1>bookmarkFox</h1>
+    <input type="email" id="email" placeholder="Email" autocomplete="email">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button id="login-btn">Login</button>
+    <button id="register-btn">Register</button>
+    <p id="auth-error" class="error hidden"></p>
+  </div>
+
+  <div id="sync-view" class="hidden">
+    <h1>bookmarkFox</h1>
+    <p id="user-email"></p>
+    <button id="sync-btn">Sync Now</button>
+    <p id="sync-status"></p>
+    <p id="last-sync" class="muted"></p>
+    <button id="logout-btn" class="secondary">Logout</button>
+    <p id="sync-error" class="error hidden"></p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
