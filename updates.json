@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "bookmarkfox@b0sh.net": {
+      "updates": [
+        {
+          "version": "1.0",
+          "update_link": "https://github.com/b0sh-net/bookmarkFox/releases/download/v1.0/bookmarkFox.xpi"
+        }
+      ]
+    }
+  }
+}
